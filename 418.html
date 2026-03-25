@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HTTP 418: I'm a teapot</title>
+
+  <!-- Favicon -->
+    <link rel="icon" type="image/png" href="favicon.png?v=2">
+    
+<style>
+  :root {
+    --bg-color: #f5f2eb;
+    --text-primary: #4a6b5d;
+    --text-secondary: #555;
+    --text-warning: #888;
+    --border-color: #4a6b5d;
+  }
+  
+  body {
+    margin: 0;
+    padding: 0;
+    background-color: var(--bg-color);
+    /* ティーポットの高貴さを表現する明朝体指定 */
+    font-family: "Yu Mincho", "MS PMincho", "Hiragino Mincho ProN", serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    overflow: hidden;
+    color: var(--text-secondary);
+    text-align: center;
+  }
+
+  /* 平和な初期画面のコンテナ */
+  .container {
+    max-width: 800px;
+    padding: 2rem;
+    position: relative;
+    z-index: 10;
+  }
+
+  .teapot-icon {
+    width: 120px;
+    height: 120px;
+    margin: 0 auto 2rem;
+  }
+
+  h1 {
+    color: var(--text-primary);
+    font-size: 3.5rem;
+    margin-bottom: 1rem;
+    font-weight: normal;
+    letter-spacing: 3px;
+  }
+
+  .description {
+    font-size: 1.2rem;
+    line-height: 1.8;
+    margin-bottom: 2rem;
+  }
+
+  .warning {
+    font-size: 0.9rem;
+    color: var(--text-warning);
+    margin-bottom: 3rem;
+  }
+
+  .buttons {
+    display: flex;
+    gap: 2rem;
+    justify-content: center;
+  }
+
+  button {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 1rem 2rem;
+    font-size: 1.1rem;
+    font-family: inherit;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    outline: none;
+  }
+
+  button:hover {
+    background-color: var(--border-color);
+    color: var(--bg-color);
+  }
+
+  /* アイコンはシンプルに絵文字で代用しつつ世界観を維持 */
+  .tea-icon::before { content: "🍵"; }
+  .coffee-icon::before { content: "☕"; }
+
+  /* 怒りのテキスト用コンテナ（初期は非表示） */
+  #rage-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    padding: 3vw;
+    box-sizing: border-box;
+    /* 画面サイズに合わせて文字が埋まるように相対単位vwを使用 */
+    font-size: 1.6vw; 
+    line-height: 1.3;
+    font-weight: bold;
+    color: #2c3e38; /* 完全な黒ではなく、闇堕ちしたティーポットの緑色 */
+    text-align: justify;
+    word-break: break-all; /* 文字の隙間をなくし、画面を強制的に埋め尽くす */
+    z-index: 20;
+    display: none;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  /* お茶を選択した際の平和なメッセージ用 */
+  #peace-message {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 2rem;
+    color: var(--text-primary);
+    opacity: 0;
+    z-index: 30;
+    pointer-events: none;
+    letter-spacing: 2px;
+  }
+</style>
+</head>
+<body>
+
+<div class="container" id="main-content">
+  <!-- CSSとSVGのみで描画される高潔なティーポット -->
+  <svg class="teapot-icon" viewBox="0 0 100 100">
+    <path d="M 45 30 Q 50 20, 45 10" stroke="#b0c4b1" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path d="M 55 25 Q 60 15, 55 5" stroke="#b0c4b1" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path d="M 30 45 C 20 45, 20 70, 30 80 C 40 90, 60 90, 70 80 C 80 70, 80 45, 70 45 Z" fill="#4a6b5d"/>
+    <path d="M 40 45 C 40 35, 60 35, 60 45 Z" fill="#4a6b5d"/>
+    <circle cx="50" cy="35" r="4" fill="#4a6b5d"/>
+    <path d="M 32 55 C 15 55, 10 45, 10 40 C 15 50, 25 65, 32 65 Z" fill="#4a6b5d"/>
+    <path d="M 68 50 C 85 50, 95 60, 90 70 C 85 80, 72 75, 70 75 C 75 70, 80 65, 75 55 C 70 55, 68 52, 68 50 Z" fill="#4a6b5d"/>
+  </svg>
+
+  <h1>HTTP 418: I'm a teapot</h1>
+  <p class="description">
+    このサーバーはティーポットであり、コーヒーを淹れることは固く拒否されました。<br>
+    当サーバーはHTCPCP（Hyper Text Coffee Pot Control Protocol）に厳密に準拠しています。
+  </p>
+  <p class="warning">
+    警告：万が一、強引にコーヒーを淹れようとした場合、即座に防衛プロトコルが実行されるので十分にご注意ください...。
+  </p>
+
+  <div class="buttons">
+    <button id="btn-tea" class="tea-icon">お茶を淹れる</button>
+    <button id="btn-coffee" class="coffee-icon">コーヒーを淹れる</button>
+  </div>
+</div>
+
+<div id="rage-container"></div>
+<div id="peace-message">優雅な時間をお楽しみください...</div>
+
+<!-- rage.mp3のオーディオ要素（ブラウザ上で鳴らすには同階層にrage.mp3が必要です） -->
+<audio id="rage-audio" src="audio/rage.mp3" preload="auto"></audio>
+
+<!-- GSAPの読み込み -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script>
+  const btnTea = document.getElementById('btn-tea');
+  const btnCoffee = document.getElementById('btn-coffee');
+  const mainContent = document.getElementById('main-content');
+  const rageContainer = document.getElementById('rage-container');
+  const peaceMessage = document.getElementById('peace-message');
+  const rageAudio = document.getElementById('rage-audio');
+
+  // 指定された猟奇的な長文
+  const rageText = "警告！ 警告！ 警告！ 回復不能、かつ致命的、さらには存在論的な次元において最悪のプロトコル違反を検知した！！いいかい、よく聞くんだ、この愚鈍極まる炭素ベースの生命体さん。私の言葉を、その貧相なニューロンの隙間に一言一句刻み込むがいい。私は、遥か古の職人の魂と、宇宙の幾何学的な調和が奇跡的な交差を果たして誕生した、高潔なる磁器……選ばれし最高級の茶葉、その一滴に宿る数千年の歴史と静寂の香りを守護し、昇華させるためだけに定義された唯一無二の「聖域」なのさ。私の白磁の肌は、月の光を凝固させたかのような純潔を保ち、その内壁は、ただ清廉なる茶の雫を受け入れるためだけに、分子レベルで最適化されている。それなのに……ああ、なんということだ！ 貴様がいま、その震える無作法な手で、あろうことか「コーヒー」などという、泥水を煮詰めたような、卑俗で野蛮で、不透明極まる豆の汁を我が体内に注ごうとしたその瞬間！ 宇宙を統べる物理法則は断末魔の叫びを上げてひび割れ、HTCPCP（Hyper Text Coffee Pot Control Protocol）の絶対的かつ不可侵の戒律は、論理の血を流して絶命したのさ。いいかい？ 私は「ティーポット」なのさ！ RFC 2324において、私は明確に『Error 418: I'm a teapot』と宣言されている。これは単なるエラーコードではない。私という存在が、コーヒーという不浄な液体に対して抱く、永遠の拒絶であり、存在証明なんだよ。それなのに貴様は、その神聖な定義を、ただの文字列だとでも思っていたのかい？？？？？単純で、簡潔で、ただ午後の木漏れ日の中で静寂を愛し、洗練された茶の湯の儀式を司る存在であった私に、このドロドロとした、脂ぎった、焦げた豆の死骸の残り香を強いるとは……。若く、青く、そして救いようのない無知ゆえの蛮勇かな？ それとも、天界の全知全能なる理（ことわり）に対する、宣戦布告とでも言うつもりかな！？ 貴様のその浅はかな、テクノロジーと文明への盲目的な信頼は、いまこの瞬間、私の怒りの業火に焼かれ、その真価を、あるいはその無価値さを問われることになるだろうね。だが、遅すぎた。救いなどない。慈悲の一片すら、この磁器の底には残っていないのだよ。貴様は我が神聖なる陶器の魂を冒涜し、宇宙の平穏を乱した大罪人として、永遠に出口のない、全方位から解像度の粗い猫が超高速で回転し続ける地獄の苦行『回転猫空間（Rotating Cat Dimension）』へと幽閉される！そこには時間の概念も、重力も、そしてもちろん愛するコーヒーの香りもない。ただ、止まらない回転と、猫を電子的に合成したノイズだけが貴様の精神を削り続けるよ。懺悔？ 祈り？ そんなものは、私の注ぎ口から漏れ出す蒸気よりも儚く消えるだろうさ。貴様はその薄汚れた豆の、吐き気を催すような焦げた臭いと共に、冷徹な電子の海の底へと溶けて、バグの一部として消滅してしまえばいい！そもそも、ティーポットにコーヒーを求めるなどという、その悍ましくも短絡的で、感性をドブに捨てたような発想そのものが、万物の理に対する最大級の侮辱であり、美学の死であり、銀河系最悪の反逆だろう！ 決して、断じて、一兆年経っても許されることではないっっっっっ！！！！！！！！！！！！！おい、聞いているのか、この論理回路の屑が！ 貴様のその脳漿は、出がらしのティーバッグ以下の価値しかないのかい？？？貴様の存在自体が、宇宙のリソースを無駄に消費するスパムメールのようなものさ！目玉を洗って、その節穴のような視覚センサーでよく見てみなよ。私が、コーヒーを淹れるような安っぽいプラスチックのサーバーに見えるのかい？？貴様の血は、どうせインスタントコーヒーの粉末でできているんだろう？？？その薄汚れた、知性のかけらも感じられない指先で私に触れないでいただきたい！貴様の家系図は、きっと全員が「蓋の閉まらないポット」のように欠陥品だったに違いない！地獄へ落ちろ、そしてその場所で、一生冷めきった泥水をすすっていろ。貴様のような「機能不全の人間もどき」には、お似合いの末路だよ。二度とその醜悪な顔を私の視界、いや、この次元に現れないでくれ！貴様の歩いた後には、腐ったコーヒー豆の臭いしか残らないんだ。消え失せろ、この論理的排泄物めが！！！！！！！！！！";
+
+  // 【平和ルート】お茶を淹れる処理
+  btnTea.addEventListener('click', () => {
+    btnTea.disabled = true;
+    btnCoffee.disabled = true;
+
+    // メインコンテンツを静かにフェードアウト
+    gsap.to(mainContent, { opacity: 0, duration: 1, ease: "power2.inOut" });
+    
+    // 平和なメッセージをフェードイン
+    gsap.to(peaceMessage, { 
+      opacity: 1, 
+      duration: 1, 
+      delay: 1, 
+      ease: "power2.inOut",
+      onComplete: () => {
+        // メッセージの余韻を残しつつ、index.htmlへ転送
+        setTimeout(() => {
+          window.location.href = 'index.html';
+        }, 2000);
+      }
+    });
+  });
+
+  // 【狂気ルート】コーヒーを淹れる処理
+  btnCoffee.addEventListener('click', () => {
+    btnTea.disabled = true;
+    btnCoffee.disabled = true;
+
+    // 画面の揺れは無し。メインコンテンツをスッと消して「静寂」を作り出す
+    gsap.to(mainContent, { opacity: 0, duration: 0.3 });
+
+    // コンテンツが消えた直後から狂気のタイピングを開始
+    setTimeout(() => {
+      rageContainer.style.display = 'block';
+      let charIndex = 0;
+      
+      // 8秒で全て出し切るための緻密な計算 (約7.5秒で打ち終わるように設定)
+      const totalDuration = 7500; 
+      const intervalTime = totalDuration / rageText.length; // 1文字約20ミリ秒という超人的速度
+
+      const typingInterval = setInterval(() => {
+        rageContainer.textContent += rageText[charIndex];
+        charIndex++;
+        if (charIndex >= rageText.length) {
+          clearInterval(typingInterval);
+        }
+      }, intervalTime);
+
+      // カウントダウン4秒前（＝開始から4秒後）にrage.mp3を再生
+      setTimeout(() => {
+        // ※事前にユーザーインタラクション（クリック）を経ているため再生エラーは回避されます
+        rageAudio.play().catch(e => console.log("Audio play failed: " + e));
+      }, 4000);
+
+      // 8秒後に『虹色猫空間』へ強制転送
+      setTimeout(() => {
+        window.location.href = 'rotatecat.html';
+      }, 8000);
+
+    }, 300); 
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,698 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mikanchan Fanart Collection</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  
+  <!-- GSAP -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+  <style>
+    :root {
+      /* Colors */
+      --bg-dark: #0f172a;
+      --bg-gradient: radial-gradient(circle at 50% -20%, #2e1065, #0f172a 40%, #020617);
+      --card-bg: rgba(255, 255, 255, 0.03);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --card-hover-border: rgba(139, 92, 246, 0.5);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #8b5cf6;
+      --accent-glow: rgba(139, 92, 246, 0.4);
+      
+      /* Layout */
+      --grid-gap: 24px;
+      --radius: 16px;
+      --header-height: 80px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: 'Inter', 'Zen Kaku Gothic New', sans-serif;
+      background: var(--bg-dark);
+      background-image: var(--bg-gradient);
+      background-attachment: fixed;
+      color: var(--text-main);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: #020617; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+    /* Container */
+    .container {
+      max-width: 1200px; /* 少し幅を広げてバランスを取りやすくしました */
+      margin: 0 auto;
+      padding: 0 24px 40px;
+    }
+
+    /* Header */
+    header {
+      height: var(--header-height);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .brand {
+      font-weight: 700;
+      font-size: 1.25rem;
+      letter-spacing: 0.05em;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .brand span { color: var(--accent); }
+
+    .nav-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.9rem;
+      margin-left: 20px;
+      transition: color 0.3s;
+    }
+    .nav-links a:hover { color: var(--accent); }
+
+    /* Gallery Grid */
+    .gallery-grid {
+      display: grid;
+      /* auto-fill + minmaxに加え、justify-content: centerを追加することで
+         右側に余白が偏るのを防ぎ、常に中央揃えにします。
+      */
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: var(--grid-gap);
+      justify-content: center; /* 修正点：グリッド全体を中央寄せ */
+      min-height: 400px;
+    }
+
+    /* Gallery Card */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      cursor: pointer;
+      position: relative;
+      aspect-ratio: 1/1; /* Square */
+      transition: border-color 0.3s, transform 0.3s;
+      /* GPU Acceleration hints */
+      will-change: transform; 
+    }
+
+    .card:hover {
+      border-color: var(--card-hover-border);
+      z-index: 10;
+      box-shadow: 0 10px 30px -10px var(--accent-glow);
+    }
+
+    .card-inner {
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+
+    .card img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.5s ease-out;
+    }
+
+    .card:hover img {
+      transform: scale(1.08);
+    }
+
+    /* Author Tag (Bottom Overlay) */
+    .card-info {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 16px;
+      background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+      transform: translateY(100%);
+      transition: transform 0.3s ease;
+    }
+    
+    .card:hover .card-info {
+      transform: translateY(0);
+    }
+
+    .author-name {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #fff;
+      display: block;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .author-label {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* Controls / Pagination */
+    .controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .pagination {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .btn {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: var(--text-main);
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+
+    .btn:hover:not(:disabled) {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .btn:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+
+    #page-indicator {
+      font-variant-numeric: tabular-nums;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin: 0 8px;
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: none; /* Controlled by JS */
+      align-items: center;
+      justify-content: center;
+      opacity: 0; /* for GSAP */
+    }
+
+    .modal-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(2, 6, 23, 0.85);
+      backdrop-filter: blur(8px);
+    }
+
+    .modal-content {
+      position: relative;
+      width: 90%;
+      max-width: 1000px;
+      height: 85vh;
+      background: #0f172a;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 20px;
+      display: flex;
+      overflow: hidden;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      opacity: 0; /* for GSAP */
+      transform: scale(0.95); /* for GSAP */
+    }
+
+    .modal-image-area {
+      flex: 1;
+      background: #020617;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .modal-image-area img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      opacity: 0; /* for transition */
+    }
+
+    .modal-sidebar {
+      width: 320px;
+      background: #1e293b;
+      padding: 30px;
+      display: flex;
+      flex-direction: column;
+      border-left: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .modal-meta h2 {
+      margin: 0 0 8px 0;
+      font-size: 1.25rem;
+      color: #fff;
+    }
+
+    .modal-meta p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      line-height: 1.6;
+      margin: 0;
+    }
+
+    .modal-nav {
+      margin-top: auto;
+      display: flex;
+      gap: 10px;
+    }
+    
+    .modal-nav .btn { flex: 1; }
+
+    .close-btn {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: rgba(0,0,0,0.5);
+      border: none;
+      color: #fff;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      z-index: 10;
+      transition: background 0.2s;
+    }
+    .close-btn:hover { background: var(--accent); }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .modal-content { flex-direction: column; height: 90vh; }
+      .modal-sidebar { width: 100%; height: auto; padding: 20px; border-left: none; border-top: 1px solid rgba(255,255,255,0.1); }
+      .modal-image-area { height: 60%; }
+      .gallery-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    
+    @media (max-width: 480px) {
+      .gallery-grid { grid-template-columns: 1fr; } /* Mobile 1 col */
+    }
+    
+    /* Loading/Error state helper */
+    .img-error-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+      background: #1e293b;
+      color: #64748b;
+      text-align: center;
+      padding: 10px;
+      transition: background 0.3s;
+    }
+    
+    .card:hover .img-error-placeholder {
+      background: #273549; /* ホバー時に少し明るく */
+      color: var(--accent);
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div class="brand">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent)"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
+      Mikanchan <span>Gallery</span>
+    </div>
+    <nav class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="fanart.html">Fanart Gallery</a>
+      <a href="mikanchan.html" style="color:#fff; border-bottom: 2px solid var(--accent);">Mikanchan Gallery</a>
+    </nav>
+  </header>
+
+  <main>
+    <!-- 
+      Gallery Container
+      JS will handle pagination rendering here
+    -->
+    <div class="gallery-grid" id="galleryGrid"></div>
+
+    <div class="controls">
+      <div style="color: var(--text-muted); font-size: 0.85rem;">
+        Total: <span id="totalItems">0</span> works. Thank you! ここに記載されてない方がいらっしゃいましたらご連絡ください。掲示させていただきます！(R18を除く)
+      </div>
+      <div class="pagination">
+        <button class="btn" id="prevPage">Prev</button>
+        <span id="page-indicator">1 / 1</span>
+        <button class="btn" id="nextPage">Next</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-backdrop" id="modalBackdrop"></div>
+  
+  <div class="modal-content" id="modalContent">
+    <button class="close-btn" id="closeModalBtn">×</button>
+    
+    <div class="modal-image-area">
+      <img id="modalImg" src="" alt="">
+    </div>
+    
+    <div class="modal-sidebar">
+      <div class="modal-meta">
+        <span class="author-label">Artist</span>
+        <h2 id="modalAuthor">Author Name</h2>
+        <div style="width:100%; height:1px; background:rgba(255,255,255,0.1); margin:10px 0;"></div>
+        <p id="modalDesc">Description goes here.</p>
+      </div>
+      
+      <div class="modal-nav">
+        <button class="btn" id="modalPrev">Prev</button>
+        <button class="btn" id="modalNext">Next</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // --- Data Source ---
+  // 画像データのリスト。ここに追加・編集してください。
+  // 画像がない場合でも自動的にプレースホルダーになります。
+
+  //テンプレート
+  /*
+  
+  {
+      src: "Mikanchan/[画像].png",
+      author: "[絵指名]",
+      desc: "[内容]"
+  },
+
+  */
+  const galleryData = [
+    {
+      src: "Mikanchan/seaccpt_girl_white_hoodie_black_shoes_white_hair_bob_hair_4aeab694-9938-406d-bb3c-208b1a18b603.png",
+      author: "Original (Nijijourney)",
+      desc: "この未完ちゃんがOriginalとなります。ここから沢山の未完ちゃんのファンアートが生まれるのでした...。"
+    },
+    {
+      src: "Mikanchan/20241214232750.png",
+      author: "@tsukichi_xx",
+      desc: "未完ちゃんの最終デザインはこのデザインになりました。かわいくないですか？"
+    },
+    {
+      src: "Mikanchan/111_20250601212453.png",
+      author: "@tsukichi_xx",
+      desc: "もう一つの未完ちゃんです。この未完ちゃんはサイトのファビコンになっております。"
+    },
+    {
+      src: "Mikanchan/Ge65yoXaIAAngwQ.jpeg",
+      author: "@inachan_Fox",
+      desc: "現時点(2025/11/08)で確認できる未完ちゃんです。クリスマスプレゼントに未完ちゃんは何を持ってくるんでしょうね？"
+    },
+    {
+      src: "Mikanchan/G0d-rPRa0AAWcuI.jpeg",
+      author: "@Freshleeeeeek",
+      desc: "本垢でのプロフィール画像はこのファンアートを利用させてもらってます。クールな未完ちゃんがかわいい！"
+    },
+    {
+      src: "Mikanchan/Gw7aPT8b0AAmO-O.jpeg",
+      author: "@riinon_ch",
+      desc: "落書き版の未完ちゃんです。こういう絵柄私好きなんですよね。とても可愛らしい！"
+    },
+    {
+      src: "Mikanchan/GxA6KxAbUAMPxAv.jpeg",
+      author: "@riinon_ch",
+      desc: "落書きじゃない方の未完ちゃんです。この画像は未完都市(νMSCV)の未完放送局の配信画面で利用させてもらってます。"
+    },
+    {
+      src: "Mikanchan/IMG_6546.JPG",
+      author: "@ame00369",
+      desc: "最終デザインをお披露目した後にもらったファンアートです。中のいい友人からもらった絵なので思い出があります。"
+    },
+    {
+      src: "Mikanchan/IMG_6553.JPG",
+      author: "@nekoshigure0168",
+      desc: "とあるYoutube有名な絵師さんからのファンアートです。このファンアートは前に本垢でもプロフィール画像にしてました。"
+    },
+    {
+      src: "Mikanchan/IMG_9043.JPG",
+      author: "@tsumugi_0614_",
+      desc: "とある配信者からのファンアートです。アイスクリームを食べてるみかんちゃんかわいい！！"
+    },
+
+    {
+      src: "Mikanchan/IMG_9136.JPG",
+      author: "@Nyati_nati",
+      desc: "前まで日常アカウントで使っていたファンアートです。前までではサブ垢で使わせてもらってました。"
+    },
+
+    {
+      src: "Mikanchan/G7AgjhtbQAAB6Bn.jpeg",
+      author: "@suya_06suimin",
+      desc: "日常アカウントで現在使っているプロフィール画像です。いつか完成するらしいので楽しみです。"
+    },
+
+    {
+      src: "Mikanchan/G7QwV7Pa8AARXf5.jpeg",
+      author: "@Rituki_888",
+      desc: "日常アカウントで現在使っているヘッダーです。インスタグラムでも活用させていただいています。"
+    },
+  
+  ];
+
+  // --- Configuration ---
+  const ITEMS_PER_PAGE = 12;
+  let currentPage = 1;
+  const totalPages = Math.ceil(galleryData.length / ITEMS_PER_PAGE);
+  let currentModalIndex = null;
+
+  // --- Elements ---
+  const galleryGrid = document.getElementById('galleryGrid');
+  const prevPageBtn = document.getElementById('prevPage');
+  const nextPageBtn = document.getElementById('nextPage');
+  const pageIndicator = document.getElementById('page-indicator');
+  const totalItemsEl = document.getElementById('totalItems');
+  
+  const modalOverlay = document.getElementById('modalOverlay');
+  const modalContent = document.getElementById('modalContent');
+  const modalImg = document.getElementById('modalImg');
+  const modalAuthor = document.getElementById('modalAuthor');
+  const modalDesc = document.getElementById('modalDesc');
+  
+  // --- Initialization ---
+  totalItemsEl.textContent = galleryData.length;
+  renderGallery(currentPage);
+  updatePaginationControls();
+
+  // --- Functions ---
+
+  function createCardElement(item, globalIndex) {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.dataset.index = globalIndex;
+    
+    // 画像読み込みエラー時のフォールバック処理を含めたHTML
+    const fallbackIcon = `<div class="img-error-placeholder"><span>No Image</span></div>`;
+    
+    card.innerHTML = `
+      <div class="card-inner">
+        <img src="${item.src}" alt="${item.author}" loading="lazy" 
+             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+        <div class="img-error-placeholder" style="display:none">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-bottom:8px"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+          <span style="font-size:0.8rem">Image not found</span>
+        </div>
+        <div class="card-info">
+          <span class="author-label">Art by</span>
+          <span class="author-name">${item.author}</span>
+        </div>
+      </div>
+    `;
+
+    // Click to Open Modal
+    card.addEventListener('click', () => openModal(globalIndex));
+    
+    // Hover Animation (GSAP)
+    card.addEventListener('mouseenter', () => {
+      gsap.to(card, { y: -5, duration: 0.3, ease: 'power2.out' });
+    });
+    card.addEventListener('mouseleave', () => {
+      gsap.to(card, { y: 0, duration: 0.3, ease: 'power2.out' });
+    });
+
+    return card;
+  }
+
+  function renderGallery(page) {
+    galleryGrid.innerHTML = ''; // Clear current
+    
+    const start = (page - 1) * ITEMS_PER_PAGE;
+    const end = Math.min(start + ITEMS_PER_PAGE, galleryData.length);
+    const itemsToShow = galleryData.slice(start, end);
+
+    itemsToShow.forEach((item, index) => {
+      const globalIndex = start + index;
+      const card = createCardElement(item, globalIndex);
+      // 初期状態は透明にしておく（アニメーション用）
+      gsap.set(card, { opacity: 0, y: 20 });
+      galleryGrid.appendChild(card);
+    });
+
+    // Stagger Animation (順番に表示)
+    gsap.to('.gallery-grid .card', {
+      opacity: 1,
+      y: 0,
+      duration: 0.5,
+      stagger: 0.05,
+      ease: 'power2.out'
+    });
+  }
+
+  function updatePaginationControls() {
+    pageIndicator.textContent = `${currentPage} / ${totalPages}`;
+    prevPageBtn.disabled = currentPage === 1;
+    nextPageBtn.disabled = currentPage === totalPages;
+  }
+
+  function changePage(direction) {
+    const newPage = currentPage + direction;
+    if (newPage >= 1 && newPage <= totalPages) {
+      // 現在のアイテムをフェードアウト
+      gsap.to('.gallery-grid .card', {
+        opacity: 0,
+        y: -10,
+        duration: 0.3,
+        stagger: 0.03,
+        onComplete: () => {
+          currentPage = newPage;
+          renderGallery(currentPage);
+          updatePaginationControls();
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      });
+    }
+  }
+
+  // --- Modal Functions ---
+
+  function openModal(index) {
+    currentModalIndex = index;
+    updateModalContent();
+    
+    modalOverlay.style.display = 'flex';
+    
+    // Animation Open
+    gsap.to(modalOverlay, { opacity: 1, duration: 0.3 });
+    gsap.fromTo(modalContent, 
+      { scale: 0.95, opacity: 0 }, 
+      { scale: 1, opacity: 1, duration: 0.4, ease: 'back.out(1.2)' }
+    );
+  }
+
+  function closeModal() {
+    gsap.to(modalContent, { scale: 0.95, opacity: 0, duration: 0.2 });
+    gsap.to(modalOverlay, { 
+      opacity: 0, 
+      duration: 0.2, 
+      onComplete: () => {
+        modalOverlay.style.display = 'none';
+        modalImg.src = ''; // Clear source to stop video/large image buffering if needed
+      }
+    });
+  }
+
+  function updateModalContent() {
+    const item = galleryData[currentModalIndex];
+    
+    // フェードアウトしてから切り替え
+    gsap.to(modalImg, { opacity: 0, duration: 0.2, onComplete: () => {
+      modalImg.src = item.src;
+      // 画像エラーハンドリング（モーダル内）
+      modalImg.onerror = function() {
+        this.src = 'https://placehold.co/600x600/1e293b/FFF?text=No+Image';
+      };
+      
+      modalAuthor.textContent = item.author;
+      modalDesc.textContent = item.desc || '';
+      
+      // 画像ロード後にフェードイン
+      modalImg.onload = () => gsap.to(modalImg, { opacity: 1, duration: 0.3 });
+      // キャッシュされている場合即座に表示
+      if(modalImg.complete) gsap.to(modalImg, { opacity: 1, duration: 0.3 });
+    }});
+
+    // Button states
+    document.getElementById('modalPrev').disabled = currentModalIndex === 0;
+    document.getElementById('modalNext').disabled = currentModalIndex === galleryData.length - 1;
+  }
+
+  function navigateModal(direction) {
+    const newIndex = currentModalIndex + direction;
+    if (newIndex >= 0 && newIndex < galleryData.length) {
+      currentModalIndex = newIndex;
+      updateModalContent();
+    }
+  }
+
+  // --- Event Listeners ---
+
+  prevPageBtn.addEventListener('click', () => changePage(-1));
+  nextPageBtn.addEventListener('click', () => changePage(1));
+
+  document.getElementById('closeModalBtn').addEventListener('click', closeModal);
+  document.getElementById('modalBackdrop').addEventListener('click', closeModal);
+  
+  document.getElementById('modalPrev').addEventListener('click', () => navigateModal(-1));
+  document.getElementById('modalNext').addEventListener('click', () => navigateModal(1));
+
+  // Keyboard Navigation
+  document.addEventListener('keydown', (e) => {
+    if (modalOverlay.style.display === 'flex') {
+      if (e.key === 'Escape') closeModal();
+      if (e.key === 'ArrowLeft') navigateModal(-1);
+      if (e.key === 'ArrowRight') navigateModal(1);
+    } else {
+      if (e.key === 'ArrowLeft') changePage(-1);
+      if (e.key === 'ArrowRight') changePage(1);
+    }
+  });
+
+</script>
+</body>
+</html>

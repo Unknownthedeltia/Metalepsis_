@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Metalepsis_</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="favicon.png?v=2">
+    
+    <!-- Libraries -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Zen+Kaku+Gothic+New:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
+    <!-- GSAP (ScrambleTextPlugin removed as it requires a paid license) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/TextPlugin.min.js"></script>
+
+    <!-- Tailwind Config -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        void: '#050505',
+                        neon: '#a855f7', // Purple
+                        acid: '#22d3ee', // Cyan
+                        alert: '#ef4444', // Red
+                    },
+                    fontFamily: {
+                        mono: ['"JetBrains Mono"', 'monospace'],
+                        sans: ['"Zen Kaku Gothic New"', 'sans-serif'],
+                    },
+                    backgroundImage: {
+                        'grid-pattern': "linear-gradient(rgba(34, 211, 238, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(34, 211, 238, 0.05) 1px, transparent 1px)",
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #050505;
+            color: #e5e7eb;
+            overflow-x: hidden;
+            cursor: none; /* カスタムカーソル */
+        }
+
+        /* 背景グリッド */
+        .bg-grid {
+            background-size: 40px 40px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        /* カスタムカーソル */
+        #cursor {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 20px;
+            height: 20px;
+            border: 1px solid #a855f7;
+            background: rgba(168, 85, 247, 0.1);
+            pointer-events: none;
+            z-index: 9999;
+            transform: translate(-50%, -50%) rotate(45deg);
+            mix-blend-mode: difference;
+            transition: width 0.3s, height 0.3s, background-color 0.3s, transform 0.1s;
+        }
+        #cursor.hovered {
+            width: 60px;
+            height: 60px;
+            background-color: rgba(34, 211, 238, 0.2);
+            border-color: #22d3ee;
+            transform: translate(-50%, -50%) rotate(0deg);
+        }
+        #cursor::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 4px;
+            height: 4px;
+            background: #a855f7;
+            transform: translate(-50%, -50%);
+        }
+
+        /* 走査線エフェクト */
+        .scanlines {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0.2));
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 9000;
+            opacity: 0.4;
+        }
+
+        /* グリッチテキスト */
+        .glitch-wrapper { position: relative; display: inline-block; }
+        .glitch { position: relative; z-index: 1; }
+        .glitch::before, .glitch::after {
+            content: attr(data-text);
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #050505;
+        }
+        .glitch::before {
+            left: 2px; text-shadow: -1px 0 #a855f7;
+            clip-path: inset(20% 0 30% 0);
+            animation: glitch-anim-1 2s infinite linear alternate-reverse;
+        }
+        .glitch::after {
+            left: -2px; text-shadow: -1px 0 #22d3ee;
+            clip-path: inset(40% 0 10% 0);
+            animation: glitch-anim-2 3s infinite linear alternate-reverse;
+        }
+        @keyframes glitch-anim-1 {
+            0% { clip-path: inset(20% 0 30% 0); } 100% { clip-path: inset(30% 0 20% 0); }
+        }
+        @keyframes glitch-anim-2 {
+            0% { clip-path: inset(10% 0 60% 0); } 100% { clip-path: inset(0% 0 80% 0); }
+        }
+
+        /* スクロールバー */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #050505; }
+        ::-webkit-scrollbar-thumb { background: #333; }
+        ::-webkit-scrollbar-thumb:hover { background: #a855f7; }
+        
+        /* ユーティリティ */
+        .glass-card {
+            background: rgba(10, 10, 10, 0.6);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+        .glass-card:hover {
+            border-color: rgba(168, 85, 247, 0.5);
+            box-shadow: 0 0 20px rgba(168, 85, 247, 0.1);
+            transform: translateY(-2px);
+        }
+
+        /* 画像ローダーのアニメーション */
+        @keyframes pulse-loader {
+            0%, 100% { opacity: 0.3; } 50% { opacity: 0.7; }
+        }
+        .img-placeholder { animation: pulse-loader 2s infinite; }
+    </style>
+</head>
+<body class="font-sans antialiased selection:bg-neon selection:text-black">
+
+    <!-- Cursor -->
+    <div id="cursor"></div>
+    <!-- Scanlines -->
+    <div class="scanlines"></div>
+    <!-- Background Grid -->
+    <div class="bg-grid bg-grid-pattern"></div>
+
+    <!-- Header -->
+    <header class="fixed top-0 left-0 w-full z-50 pointer-events-none mix-blend-plus-lighter">
+        <nav class="container mx-auto px-6 py-6 flex justify-between items-center pointer-events-auto bg-gradient-to-b from-void/80 to-transparent backdrop-blur-sm">
+            <a href="#top" class="text-2xl font-mono font-bold hover-trigger group flex items-center gap-2">
+                <span class="w-3 h-3 bg-neon rounded-none animate-pulse"></span>
+                Metalepsis<span class="text-acid">_</span>
+            </a>
+            
+            <div class="hidden md:flex space-x-8 font-mono text-xs tracking-widest">
+                <a href="#news" class="hover:text-neon transition-colors hover-trigger">[01] NEWS</a>
+                <a href="#about" class="hover:text-neon transition-colors hover-trigger">[02] ABOUT</a>
+                <a href="#work" class="hover:text-neon transition-colors hover-trigger">[03] WORK</a>
+                <a href="#project" class="hover:text-neon transition-colors hover-trigger">[04-1] PROJECT[STORY]</a>
+                <a href="#project2" class="hover:text-neon transition-colors hover-trigger">[04-2] PROJECT[ETC]</a>
+                <a href="#fanart" class="hover:text-neon transition-colors hover-trigger">[05] FANART</a>
+                <a href="#contact" class="hover:text-neon transition-colors hover-trigger">[06] CONTACT</a>
+            </div>
+
+            <!-- Mobile Menu -->
+            <div class="md:hidden text-2xl hover-trigger text-white">
+                <i class="ph ph-list"></i>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <!-- Hero Section -->
+        <section id="top" class="relative h-screen flex flex-col justify-center items-center overflow-hidden">
+            <!-- Glitch Background Elements -->
+            <div class="absolute inset-0 z-0 opacity-10 pointer-events-none">
+                <div class="absolute top-0 right-0 w-[500px] h-[500px] bg-neon rounded-full blur-[150px] animate-pulse"></div>
+                <div class="absolute bottom-0 left-0 w-[600px] h-[600px] bg-acid rounded-full blur-[150px] animate-pulse" style="animation-delay: 1.5s;"></div>
+            </div>
+
+            <div class="z-10 text-center px-4 relative">
+                <div class="font-mono text-acid mb-6 text-xs md:text-sm tracking-[0.5em] border border-acid/30 py-1 px-4 inline-block bg-void/50 backdrop-blur">
+                    <span id="scramble-text">SYSTEM_BOOT_SEQUENCE_INIT</span>
+                </div>
+                
+                <h1 class="text-6xl md:text-9xl font-bold font-mono leading-none mb-2 tracking-tighter">
+                    <div class="glitch-wrapper">
+                        <span class="glitch" data-text="METALEPSIS">METALEPSIS</span>
+                    </div>
+                </h1>
+                <div class="text-neon text-3xl md:text-5xl font-mono text-right tracking-widest opacity-0 reveal-hero-text">
+                    _PROTOCOL
+                </div>
+                
+                <div class="max-w-xl mx-auto mt-12 font-sans border-l-2 border-neon pl-6 text-left opacity-0 reveal-hero-text bg-gradient-to-r from-white/5 to-transparent p-4">
+                    <p class="text-gray-300 text-base md:text-lg leading-relaxed">
+                        烏龍茶と宇宙の矛盾に基づいた<br>
+                        <span class="text-acid font-bold">100%不安全なサイト</span>へようこそ。<br>
+                        <span class="text-xs font-mono text-gray-500 mt-2 block">WARNING: Reality integrity compromised.</span>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Scroll Indicator -->
+            <div class="absolute bottom-10 right-10 flex flex-col items-end gap-2 opacity-50 font-mono text-xs">
+                <span>SCROLL_DOWN</span>
+                <div class="h-16 w-[1px] bg-gradient-to-b from-transparent to-neon animate-pulse"></div>
+            </div>
+        </section>
+
+        <!-- News Section -->
+        <section id="news" class="py-32 bg-void relative border-t border-white/5">
+            <div class="container mx-auto px-6">
+                <div class="flex items-baseline gap-4 mb-16 border-b border-white/10 pb-4">
+                    <span class="text-neon font-mono text-xl">01</span>
+                    <h2 class="text-4xl md:text-6xl font-mono font-bold text-white">NEWS</h2>
+                </div>
+
+                <div class="space-y-4 max-w-4xl mx-auto">
+                    <!-- News Item -->
+                    <div class="group glass-card p-6 md:p-8 hover-trigger reveal-up relative overflow-hidden">
+                        <div class="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-100 transition-opacity">
+                            <i class="ph ph-arrow-up-right text-2xl text-neon"></i>
+                        </div>
+                        <div class="flex flex-col md:flex-row md:items-center gap-4 mb-2">
+                            <span class="font-mono text-acid text-xs border border-acid px-2 py-0.5">2026.03.23</span>
+                            <span class="text-gray-500 font-mono text-xs">SYSTEM_UPDATE</span>
+                        </div>
+                        <h3 class="text-xl md:text-2xl font-bold group-hover:text-neon transition-colors">サイトプロトコル、始動。</h3>
+                        <p class="text-gray-400 mt-2 text-sm leading-relaxed">
+                            Webサイトを公開しました。バグ報告は<a href="404.html" class="text-acid hover:underline underline-offset-4">猫の養育費</a>へ投げてください。
+                        </p>
+                    </div>
+
+                    <div class="group glass-card p-6 md:p-8 hover-trigger reveal-up relative overflow-hidden">
+                        <div class="flex flex-col md:flex-row md:items-center gap-4 mb-2">
+                            <span class="font-mono text-gray-500 text-xs border border-gray-700 px-2 py-0.5">2025.06.XX</span>
+                            <span class="text-gray-500 font-mono text-xs">MAINTENANCE</span>
+                        </div>
+                        <h3 class="text-xl md:text-2xl font-bold group-hover:text-neon transition-colors">サーバー冷却用烏龍茶の補給</h3>
+                        <p class="text-gray-400 mt-2 text-sm">在庫が不足しています。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- About Section -->
+        <section id="about" class="py-32 relative overflow-hidden border-t border-white/5">
+            <!-- Background Text Decoration -->
+            <div class="absolute right-0 top-20 opacity-5 font-mono font-bold text-9xl md:text-[15rem] leading-none pointer-events-none select-none text-white whitespace-nowrap">
+                WHO_AM_I
+            </div>
+
+            <div class="container mx-auto px-6 relative z-10">
+                <div class="flex items-baseline gap-4 mb-16 border-b border-white/10 pb-4 justify-end">
+                    <h2 class="text-4xl md:text-6xl font-mono font-bold text-white">ABOUT</h2>
+                    <span class="text-neon font-mono text-xl">02</span>
+                </div>
+
+                <div class="grid md:grid-cols-2 gap-12 items-center">
+                    <div class="order-2 md:order-1 reveal-left">
+                        <h3 class="text-3xl font-bold mb-8 font-mono flex items-center gap-2">
+                            Metalepsis_<span class="text-neon text-sm bg-neon/10 px-2 py-1">.exe</span>
+                        </h3>
+                        <div class="space-y-6 text-gray-300 leading-loose font-sans">
+                            <p>
+                                はじめまして。Metalepsis_(正式名称˖̰̠̰˗̰̠̼˗ˠ˗̼̠͗ˤ̴̟˗̰̑̈ˤ̴˖ʷ˗̰̠ˤ)です。<br>
+                                本日は<span class="text-acid font-bold">「猿でもわかる私のサイト」</span>をお届けします。
+                            </p>
+                            <div class="bg-alert/10 border-l-2 border-alert p-4 text-sm font-mono text-gray-400">
+                                <span class="text-alert font-bold block mb-1">WARNING:</span>
+                                一部に事実と異なる点や過度に美味しい誇張が含まれる場合があります。
+                            </div>
+                            <p>
+                                苦情は<a href="https://unknownthedeltia.github.io/jinshinbaitaisyokuhinsentar.github.io/" target="_blank" class="text-acid hover:text-neon transition-colors underline underline-offset-4 decoration-dashed hover-trigger">人身売買美味しい加工食品センター苦情課</a>へ。<br>
+                                <span class="text-xs text-gray-500">※対応は主にマグロが行います。</span>
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="order-1 md:order-2 flex justify-center reveal-right">
+                        <div class="relative w-64 h-64 md:w-80 md:h-80 group hover-trigger">
+                            <!-- Decor -->
+                            <div class="absolute -inset-2 border border-neon/30 rounded-full animate-spin-slow"></div>
+                            <div class="absolute -inset-4 border border-acid/20 rounded-full animate-spin-reverse-slow"></div>
+                            
+                            <!-- Image -->
+                            <div class="relative w-full h-full rounded-full overflow-hidden border-4 border-void ring-2 ring-gray-800">
+                                <img src="mikanchan.jpg" onerror="this.src='https://placehold.co/400x400/1a1a1a/a855f7?text=NO+IMAGE'" alt="Profile" class="w-full h-full object-cover filter grayscale group-hover:grayscale-0 transition-all duration-500 transform group-hover:scale-110">
+                            </div>
+                            
+                            <!-- Glitch Overlay on Hover -->
+                            <div class="absolute inset-0 rounded-full bg-neon/20 mix-blend-overlay opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Work Section -->
+        <section id="work" class="py-32 bg-void border-t border-white/5">
+            <div class="container mx-auto px-6">
+                <div class="flex items-baseline gap-4 mb-16 border-b border-white/10 pb-4">
+                    <span class="text-neon font-mono text-xl">03</span>
+                    <h2 class="text-4xl md:text-6xl font-mono font-bold text-white">WORK</h2>
+                </div>
+
+                <div class="relative border-l border-gray-800 ml-4 md:ml-20 space-y-16">
+                    <!-- Work Item -->
+                    <div class="relative pl-8 md:pl-16 reveal-up group">
+                        <div class="absolute -left-[5px] top-3 w-2.5 h-2.5 bg-neon rounded-none rotate-45 group-hover:scale-150 transition-transform duration-300 shadow-[0_0_10px_#a855f7]"></div>
+                        <span class="font-mono text-xs text-acid mb-2 block tracking-widest">2021 - PRESENT</span>
+                        <h3 class="text-3xl font-bold mb-3 group-hover:text-neon transition-colors">Enth</h3>
+                        <p class="text-gray-400">現在は Enter と Dominance を制作中です。</p>
+                    </div>
+
+                    <!-- Work Item -->
+                    <div class="relative pl-8 md:pl-16 reveal-up group">
+                        <div class="absolute -left-[5px] top-3 w-2.5 h-2.5 bg-gray-600 rounded-none rotate-45 group-hover:bg-acid group-hover:scale-150 transition-all duration-300"></div>
+                        <span class="font-mono text-xs text-gray-500 mb-2 block tracking-widest">2022 - PRESENT</span>
+                        <h3 class="text-3xl font-bold mb-3 group-hover:text-acid transition-colors">Logo edit</h3>
+                        <p class="text-gray-400">主にTwitterのフォロワーのロゴを制作しています。</p>
+                    </div>
+                    
+                    <!-- Work Item -->
+                    <div class="relative pl-8 md:pl-16 reveal-up group">
+                        <div class="absolute -left-[5px] top-3 w-2.5 h-2.5 bg-gray-600 rounded-none rotate-45 group-hover:bg-acid group-hover:scale-150 transition-all duration-300"></div>
+                        <span class="font-mono text-xs text-gray-500 mb-2 block tracking-widest">2025/2/11 - PRESENT</span>
+                        <h3 class="text-3xl font-bold mb-3 group-hover:text-acid transition-colors"><a href="foo.html" target="_blank">未完都市</a></h3>
+                        <p class="text-gray-400">Discordサーバー『未完都市』の運営をしています。</p>
+                    </div>
+
+                    <!-- Work Item -->
+                    <div class="relative pl-8 md:pl-16 reveal-up group">
+                        <div class="absolute -left-[5px] top-3 w-2.5 h-2.5 bg-gray-600 rounded-none rotate-45 group-hover:bg-acid group-hover:scale-150 transition-all duration-300"></div>
+                        <span class="font-mono text-xs text-gray-500 mb-2 block tracking-widest">2025/11/11 - PRESENT</span>
+                        <h3 class="text-3xl font-bold mb-3 group-hover:text-acid transition-colors"><a href="https://unknownthedeltia.github.io/Nablachat/" target="_blank">Nablachat(beta)</a></h3>
+                        <p class="text-gray-400">Nablachatを制作しています。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Project Section -->
+        <section id="project" class="py-32 border-t border-white/5">
+            <div class="container mx-auto px-6">
+                <div class="flex items-baseline gap-4 mb-16 border-b border-white/10 pb-4 justify-end">
+                    <h2 class="text-4xl md:text-6xl font-mono font-bold text-white">PROJECT</h2>
+                    <span class="text-neon font-mono text-xl">04-1[N Series]</span>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Project Card 1 -->
+                    <a href="https://wikiwiki.jp/npec" target="_blank" class="group relative h-96 block hover-trigger reveal-card overflow-hidden border border-gray-800 hover:border-neon transition-colors duration-500">
+                        <!-- Image -->
+                        <div class="absolute inset-0 bg-gray-900">
+                            <img src="project1/p1-1.png" onerror="this.src='https://placehold.co/600x800/111/333?text=Npec'" alt="Npec" class="w-full h-full object-cover opacity-60 group-hover:opacity-40 group-hover:scale-105 transition-all duration-700">
+                        </div>
+                        
+                        <!-- Content -->
+                        <div class="absolute inset-0 p-8 flex flex-col justify-end bg-gradient-to-t from-black via-black/50 to-transparent">
+                            <div class="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+                                <span class="font-mono text-xs text-acid mb-2 block">CREATIVE_SYSTEM</span>
+                                <h3 class="text-2xl font-bold mb-2 group-hover:text-neon transition-colors">Npec</h3>
+                                <p class="text-sm text-gray-400 line-clamp-2 mb-4">自由に二次創作を作ることができる作品体系。</p>
+                                <div class="flex items-center text-xs font-mono text-white opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100">
+                                    ACCESS_DATA <i class="ph ph-caret-right ml-2"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+
+                    <!-- Project Card 2 -->
+                    <a href="https://wikiwiki.jp/nangminiq" target="_blank" class="group relative h-96 block hover-trigger reveal-card overflow-hidden border border-gray-800 hover:border-acid transition-colors duration-500">
+                        <div class="absolute inset-0 bg-gray-900">
+                            <img src="project1/p1-2.png" onerror="this.src='https://placehold.co/600x800/111/333?text=Nangminiq'" alt="Nangminiq" class="w-full h-full object-cover opacity-60 group-hover:opacity-40 group-hover:scale-105 transition-all duration-700">
+                        </div>
+                        <div class="absolute inset-0 p-8 flex flex-col justify-end bg-gradient-to-t from-black via-black/50 to-transparent">
+                            <div class="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+                                <span class="font-mono text-xs text-acid mb-2 block">STORY</span>
+                                <h3 class="text-2xl font-bold mb-2 group-hover:text-acid transition-colors">Nangminiq</h3>
+                                <p class="text-sm text-gray-400 line-clamp-2 mb-4">「問い」を元にしてつくった作品。</p>
+                                <div class="flex items-center text-xs font-mono text-white opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100">
+                                    ACCESS_DATA <i class="ph ph-caret-right ml-2"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+
+                    <!-- Project Card 3 (Coming Soon) -->
+                    <a href="404.html" class="group relative h-96 block hover-trigger reveal-card overflow-hidden border border-dashed border-gray-800 hover:border-white transition-colors duration-500 bg-void">
+                         <div class="absolute inset-0 bg-gray-900">
+                            <img src="project1/p1-3.png" onerror="this.src='https://placehold.co/600x800/050505/222?text=LOCKED'" alt="Unknown" class="w-full h-full object-cover opacity-20 grayscale group-hover:opacity-10 transition-all duration-700">
+                        </div>
+                        <div class="absolute inset-0 flex flex-col items-center justify-center text-center p-6">
+                            <i class="ph ph-lock-key text-3xl text-gray-600 mb-4 group-hover:text-white transition-colors"></i>
+                            <h3 class="text-xl font-mono font-bold text-gray-500 group-hover:text-white transition-colors">N?????????</h3>
+                            <p class="text-xs font-mono text-gray-600 mt-2">DATA_ENCRYPTED</p>
+                        </div>
+                    </a>
+
+                      <!-- Project Card 4 -->
+                    <a href="https://note.com/unknownthedeltia/n/n13a4568e6319" target="_blank" class="group relative h-96 block hover-trigger reveal-card overflow-hidden border border-gray-800 hover:border-acid transition-colors duration-500">
+                        <div class="absolute inset-0 bg-gray-900">
+                            <img src="project1/p1-4.png" onerror="this.src='https://placehold.co/600x800/111/333?text=sh'" alt="SH" class="w-full h-full object-cover opacity-60 group-hover:opacity-40 group-hover:scale-105 transition-all duration-700">
+                        </div>
+                        <div class="absolute inset-0 p-8 flex flex-col justify-end bg-gradient-to-t from-black via-black/50 to-transparent">
+                            <div class="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+                                <span class="font-mono text-xs text-acid mb-2 block">STORY</span>
+                                <h3 class="text-2xl font-bold mb-2 group-hover:text-acid transition-colors">Spiritual Hallucination Therapy</h3>
+                                <p class="text-sm text-gray-400 line-clamp-2 mb-4">Nangminiq前日譚</p>
+                                <div class="flex items-center text-xs font-mono text-white opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100">
+                                    ACCESS_DATA <i class="ph ph-caret-right ml-2"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                    
+                    <!-- Project Card 5 -->
+                    <a href="404.html" class="group relative h-96 block hover-trigger reveal-card overflow-hidden border border-dashed border-gray-800 hover:border-white transition-colors duration-500 bg-void">
+                         <div class="absolute inset-0 bg-gray-900">
+                            <img src="project1/p1-5.png" onerror="this.src='https://placehold.co/600x800/050505/222?text=LOCKED'" alt="Unknown" class="w-full h-full object-cover opacity-20 grayscale group-hover:opacity-10 transition-all duration-700">
+                        </div>
+                        <div class="absolute inset-0 flex flex-col items-center justify-center text-center p-6">
+                            <i class="ph ph-lock-key text-3xl text-gray-600 mb-4 group-hover:text-white transition-colors"></i>
+                            <h3 class="text-xl font-mono font-bold text-gray-500 group-hover:text-white transition-colors">??????????</h3>
+                            <p class="text-xs font-mono text-gray-600 mt-2">DATA_ENCRYPTED</p>
+                        </div>
+                    </a>
+                    
+
+                     <!-- Project Card 6 (Coming Soon) -->
+                    <a href="404.html" class="group relative h-96 block hover-trigger reveal-card overflow-hidden border border-dashed border-gray-800 hover:border-white transition-colors duration-500 bg-void">
+                         <div class="absolute inset-0 bg-gray-900">
+                            <img src="project1/p1-6.png" onerror="this.src='https://placehold.co/600x800/050505/222?text=LOCKED'" alt="Unknown" class="w-full h-full object-cover opacity-20 grayscale group-hover:opacity-10 transition-all duration-700">
+                        </div>
+                        <div class="absolute inset-0 flex flex-col items-center justify-center text-center p-6">
+                            <i class="ph ph-lock-key text-3xl text-gray-600 mb-4 group-hover:text-white transition-colors"></i>
+                            <h3 class="text-xl font-mono font-bold text-gray-500 group-hover:text-white transition-colors">??????????</h3>
+                            <p class="text-xs font-mono text-gray-600 mt-2">DATA_ENCRYPTED</p>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <section id="project2" class="py-32 border-t border-white/5">
+            <div class="container mx-auto px-6">
+                <div class="flex items-baseline gap-4 mb-16 border-b border-white/10 pb-4 justify-end">
+                    <h2 class="text-4xl md:text-6xl font-mono font-bold text-white">PROJECT</h2>
+                    <span class="text-neon font-mono text-xl">04-2[その他]</span>
+                </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+                <!-- Project Card 1 -->
+                <a href="https://unknownthedeltia.github.io/mip/" target="_blank" class="group relative h-96 block hover-trigger reveal-card overflow-hidden border border-gray-800 hover:border-neon transition-colors duration-500">
+                        <!-- Image -->
+                        <div class="absolute inset-0 bg-gray-900">
+                            <img src="project2/p2-1.png" onerror="this.src='https://placehold.co/600x800/111/333?text=mip'" alt="mip" class="w-full h-full object-cover opacity-60 group-hover:opacity-40 group-hover:scale-105 transition-all duration-700">
+                        </div>
+                        
+                        <!-- Content -->
+                        <div class="absolute inset-0 p-8 flex flex-col justify-end bg-gradient-to-t from-black via-black/50 to-transparent">
+                            <div class="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+                                <span class="font-mono text-xs text-acid mb-2 block">診断</span>
+                                <h3 class="text-2xl font-bold mb-2 group-hover:text-neon transition-colors">Mtps思想診断</h3>
+                                <p class="text-sm text-gray-400 line-clamp-2 mb-4">思想を診断できるツール。</p>
+                                <div class="flex items-center text-xs font-mono text-white opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100">
+                                    ACCESS_DATA <i class="ph ph-caret-right ml-2"></i>
+                                </div>
+                            </div>
+                        </div>
+                </a>
+
+                 <!-- Project Card 2 (Coming Soon) -->
+                <a href="404.html" class="group relative h-96 block hover-trigger reveal-card overflow-hidden border border-dashed border-gray-800 hover:border-white transition-colors duration-500 bg-void">
+                         <div class="absolute inset-0 bg-gray-900">
+                            <img src="project2/p2-2.png" onerror="this.src='https://placehold.co/600x800/050505/222?text=LOCKED'" alt="foo" class="w-full h-full object-cover opacity-20 grayscale group-hover:opacity-10 transition-all duration-700">
+                        </div>
+                        <div class="absolute inset-0 flex flex-col items-center justify-center text-center p-6">
+                            <i class="ph ph-lock-key text-3xl text-gray-600 mb-4 group-hover:text-white transition-colors"></i>
+                            <h3 class="text-xl font-mono font-bold text-gray-500 group-hover:text-white transition-colors">??????????</h3>
+                            <p class="text-xs font-mono text-gray-600 mt-2">DATA_ENCRYPTED</p>
+                        </div>
+                </a>
+
+                 <!-- Project Card 3 (Coming Soon) -->
+               <a href="418.html" class="group relative h-96 block hover-trigger reveal-card overflow-hidden border border-dashed border-gray-800 hover:border-white transition-colors duration-500 bg-void">
+                         <div class="absolute inset-0 bg-gray-900">
+                            <img src="project2/p2-3.png" onerror="this.src='https://placehold.co/600x800/050505/222?text=LOCKED'" alt="bar" class="w-full h-full object-cover opacity-20 grayscale group-hover:opacity-10 transition-all duration-700">
+                        </div>
+                        <div class="absolute inset-0 flex flex-col items-center justify-center text-center p-6">
+                            <i class="ph ph-lock-key text-3xl text-gray-600 mb-4 group-hover:text-white transition-colors"></i>
+                            <h3 class="text-xl font-mono font-bold text-gray-500 group-hover:text-white transition-colors">??????????</h3>
+                            <p class="text-xs font-mono text-gray-600 mt-2">DATA_ENCRYPTED</p>
+                        </div>
+                </a>
+                 <!-- Project Card 4 -->
+                 <a href="https://note.com/unknownthedeltia/m/mc6e17d530d99" target="_blank" class="group relative h-96 block hover-trigger reveal-card overflow-hidden border border-gray-800 hover:border-acid transition-colors duration-500">
+                        <div class="absolute inset-0 bg-gray-900">
+                            <img src="project2/p2-4.png" onerror="this.src='https://placehold.co/600x800/111/333?text=fxxkinote'" alt="Fnote" class="w-full h-full object-cover opacity-60 group-hover:opacity-40 group-hover:scale-105 transition-all duration-700">
+                        </div>
+                        <div class="absolute inset-0 p-8 flex flex-col justify-end bg-gradient-to-t from-black via-black/50 to-transparent">
+                            <div class="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+                                <span class="font-mono text-xs text-acid mb-2 block">NOTE</span>
+                                <h3 class="text-2xl font-bold mb-2 group-hover:text-acid transition-colors">キチガイ記事シリーズ</h3>
+                                <p class="text-sm text-gray-400 line-clamp-2 mb-4">人が作るものではない。</p>
+                                <div class="flex items-center text-xs font-mono text-white opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100">
+                                    ACCESS_DATA <i class="ph ph-caret-right ml-2"></i>
+                            </div>
+                        </div>
+                        </div>
+                 </a>
+
+                 <!-- Project Card 5 -->
+                 <a href="404.html" class="group relative h-96 block hover-trigger reveal-card overflow-hidden border border-dashed border-gray-800 hover:border-white transition-colors duration-500 bg-void">
+                         <div class="absolute inset-0 bg-gray-900">
+                            <img src="project2/p2-5.png" onerror="this.src='https://placehold.co/600x800/050505/222?text=LOCKED'" alt="Unknown" class="w-full h-full object-cover opacity-20 grayscale group-hover:opacity-10 transition-all duration-700">
+                        </div>
+                        <div class="absolute inset-0 flex flex-col items-center justify-center text-center p-6">
+                            <i class="ph ph-lock-key text-3xl text-gray-600 mb-4 group-hover:text-white transition-colors"></i>
+                            <h3 class="text-xl font-mono font-bold text-gray-500 group-hover:text-white transition-colors">??????????</h3>
+                            <p class="text-xs font-mono text-gray-600 mt-2">DATA_ENCRYPTED</p>
+                        </div>
+                </a>
+
+                <!-- Project Card 6 -->
+                <a href="404.html" class="group relative h-96 block hover-trigger reveal-card overflow-hidden border border-dashed border-gray-800 hover:border-white transition-colors duration-500 bg-void">
+                         <div class="absolute inset-0 bg-gray-900">
+                            <img src="project2/p2-6.png" onerror="this.src='https://placehold.co/600x800/050505/222?text=LOCKED'" alt="Unknown" class="w-full h-full object-cover opacity-20 grayscale group-hover:opacity-10 transition-all duration-700">
+                        </div>
+                        <div class="absolute inset-0 flex flex-col items-center justify-center text-center p-6">
+                            <i class="ph ph-lock-key text-3xl text-gray-600 mb-4 group-hover:text-white transition-colors"></i>
+                            <h3 class="text-xl font-mono font-bold text-gray-500 group-hover:text-white transition-colors">??????????</h3>
+                            <p class="text-xs font-mono text-gray-600 mt-2">DATA_ENCRYPTED</p>
+                        </div>
+                </a>
+
+            </div>
+            </div>
+        </section>
+
+        <!-- Fanart Section -->
+        <section id="fanart" class="py-32 bg-void border-t border-white/5">
+            <div class="container mx-auto px-6">
+                <div class="flex items-baseline gap-4 mb-16 border-b border-white/10 pb-4">
+                    <span class="text-neon font-mono text-xl">05</span>
+                    <h2 class="text-4xl md:text-6xl font-mono font-bold text-white">FANART</h2>
+                </div>
+
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 auto-rows-[200px]">
+                    <!-- Main Gallery Link -->
+                    <a href="fanart.html" class="col-span-2 row-span-2 group relative overflow-hidden border border-gray-800 rounded-sm hover-trigger reveal-card">
+                        <img src="fanart/4.jpg" onerror="this.src='https://placehold.co/800x800/222/555?text=Gallery'" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-70 group-hover:opacity-100">
+                        <div class="absolute inset-0 bg-black/60 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                            <span class="text-3xl font-mono font-bold text-white mb-2">FANART GALLERY</span>
+                            <span class="text-neon text-xs font-mono border border-neon px-3 py-1">ENTER_ARCHIVE</span>
+                        </div>
+                    </a>
+
+                    <!-- Mikanchan Link -->
+                    <a href="mikanchan.html" class="col-span-2 md:col-span-2 row-span-1 group relative overflow-hidden border border-gray-800 rounded-sm hover-trigger reveal-card">
+                        <img src="Mikanchan/GxA6KxAbUAMPxAv.jpeg" onerror="this.src='https://placehold.co/800x400/333/666?text=Mikanchan'" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-70 group-hover:opacity-100">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80 group-hover:opacity-100 transition-opacity"></div>
+                        <div class="absolute bottom-4 left-4">
+                            <h4 class="font-bold text-white text-xl">FANART Mikanchan</h4>
+                            <p class="text-xs text-gray-400 font-mono">PROXY_AGENT_PROFILE</p>
+                        </div>
+                    </a>
+
+                    <!-- Decorative Blocks -->
+                    <div class="col-span-1 row-span-1 bg-gray-900/50 border border-gray-800 flex items-center justify-center reveal-card group hover:bg-neon/10 transition-colors">
+                        <i class="ph ph-paint-brush-broad text-4xl text-gray-700 group-hover:text-neon transition-colors"></i>
+                    </div>
+                    <div class="col-span-1 row-span-1 bg-gray-900/50 border border-gray-800 flex items-center justify-center reveal-card group hover:bg-acid/10 transition-colors">
+                        <i class="ph ph-images text-4xl text-gray-700 group-hover:text-acid transition-colors"></i>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Contact Section -->
+        <footer id="contact" class="py-32 bg-black border-t border-gray-800 relative overflow-hidden">
+            <!-- Grid Background -->
+            <div class="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:20px_20px]"></div>
+
+            <div class="container mx-auto px-6 text-center relative z-10">
+                <span class="font-mono text-neon text-sm mb-4 block reveal-up">/// CONNECT_TO_NETWORK</span>
+                <h2 class="text-4xl md:text-7xl font-mono font-bold mb-16 reveal-up text-transparent bg-clip-text bg-gradient-to-r from-white via-gray-400 to-gray-600">
+                    CONTACT
+                </h2>
+                
+                <div class="flex flex-wrap justify-center gap-6 mb-20 reveal-up">
+                    <a href="https://x.com/Metalepsis_" target="_blank" class="w-16 h-16 border border-gray-700 flex items-center justify-center text-2xl text-gray-400 hover:text-black hover:bg-neon hover:border-neon transition-all duration-300 hover-trigger hover:-translate-y-2">
+                        <i class="ph ph-x-logo"></i>
+                    </a>
+                    <a href="https://instagram.com/_.metalepsis._" target="_blank" class="w-16 h-16 border border-gray-700 flex items-center justify-center text-2xl text-gray-400 hover:text-white hover:bg-pink-600 hover:border-pink-600 transition-all duration-300 hover-trigger hover:-translate-y-2">
+                        <i class="ph ph-instagram-logo"></i>
+                    </a>
+                    <a href="mscv.html" target="_blank" class="w-16 h-16 border border-gray-700 flex items-center justify-center text-2xl text-gray-400 hover:text-white hover:bg-indigo-600 hover:border-indigo-600 transition-all duration-300 hover-trigger hover:-translate-y-2">
+                        <i class="ph ph-discord-logo"></i>
+                    </a>
+                    <a href="https://youtube.com/Metalepsis_DeltanablA" target="_blank" class="w-16 h-16 border border-gray-700 flex items-center justify-center text-2xl text-gray-400 hover:text-white hover:bg-red-600 hover:border-red-600 transition-all duration-300 hover-trigger hover:-translate-y-2">
+                        <i class="ph ph-youtube-logo"></i>
+                    </a>
+                    <!-- Hidden Link to Unknown.html -->
+                    <a href="unknown.html" target="_blank" class="w-16 h-16 border border-gray-800 flex items-center justify-center text-2xl text-gray-700 hover:text-acid hover:border-acid transition-all duration-300 hover-trigger hover:-translate-y-2 group">
+                        <i class="ph ph-question group-hover:animate-spin"></i>
+                    </a>
+                </div>
+
+                <div class="text-gray-600 font-mono text-xs border-t border-gray-900 pt-8">
+                    <a href="what.html" class="hover:text-alert transition-colors cursor-help hover-trigger">SYSTEM TERMINATED.</a>
+                    <p class="mt-2">&copy; 2026 Metalepsis_. All Rights Reserved.</p>
+                </div>
+            </div>
+        </footer>
+    </main>
+
+    <script>
+        // Custom Cursor
+        const cursor = document.getElementById('cursor');
+        const hoverTriggers = document.querySelectorAll('.hover-trigger, a, button');
+
+        document.addEventListener('mousemove', (e) => {
+            cursor.style.left = e.clientX + 'px';
+            cursor.style.top = e.clientY + 'px';
+        });
+
+        hoverTriggers.forEach(trigger => {
+            trigger.addEventListener('mouseenter', () => cursor.classList.add('hovered'));
+            trigger.addEventListener('mouseleave', () => cursor.classList.remove('hovered'));
+        });
+
+        // GSAP Setup
+        gsap.registerPlugin(ScrollTrigger, TextPlugin); // ScrambleTextPlugin removed
+
+        // Hero Animation
+        const tl = gsap.timeline();
+        
+        // Custom Scramble Effect using vanilla JS + GSAP TextPlugin
+        const scrambleElement = document.getElementById("scramble-text");
+        const targetText = "SYSTEM STATUS: UNSTABLE";
+        const chars = "01_!@#$%";
+        const proxy = { value: 0 };
+
+        tl.to(proxy, {
+            value: 1,
+            duration: 1.5,
+            ease: "none",
+            onUpdate: function() {
+                const progress = this.progress();
+                const len = targetText.length;
+                const revealed = Math.floor(progress * len);
+                let output = "";
+                
+                for(let i=0; i < len; i++) {
+                    if (i < revealed) {
+                        output += targetText[i];
+                    } else {
+                        // Random char
+                        output += chars[Math.floor(Math.random() * chars.length)];
+                    }
+                }
+                scrambleElement.innerText = output;
+            },
+            onComplete: () => {
+                scrambleElement.innerText = targetText;
+            }
+        })
+        // 2. Main Title Reveal
+        .from(".glitch", {
+            duration: 1,
+            y: 50,
+            opacity: 0,
+            ease: "power4.out"
+        })
+        // 3. Subtext Reveal
+        .to(".reveal-hero-text", {
+            duration: 1,
+            opacity: 1,
+            y: 0,
+            stagger: 0.2,
+            ease: "power2.out"
+        }, "-=0.5");
+
+
+        // Scroll Animations
+        const animateOnScroll = (selector, fromVars) => {
+            gsap.utils.toArray(selector).forEach(elem => {
+                gsap.from(elem, {
+                    scrollTrigger: {
+                        trigger: elem,
+                        start: "top 85%",
+                        toggleActions: "play none none reverse"
+                    },
+                    duration: 1,
+                    ease: "power3.out",
+                    ...fromVars
+                });
+            });
+        };
+
+        animateOnScroll('.reveal-up', { y: 50, opacity: 0 });
+        animateOnScroll('.reveal-left', { x: -50, opacity: 0 });
+        animateOnScroll('.reveal-right', { x: 50, opacity: 0 });
+        
+        // Staggered Cards
+        gsap.utils.toArray('.reveal-card').forEach((elem, i) => {
+            gsap.from(elem, {
+                scrollTrigger: {
+                    trigger: elem,
+                    start: "top 90%",
+                },
+                y: 50,
+                opacity: 0,
+                duration: 0.8,
+                ease: "back.out(1.7)"
+            });
+        });
+
+        // Dynamic Title
+        const titles = [
+            "Metalepsis_", "M_talepsis_", "Me_alepsis_", "Met_lepsis_", 
+            "Meta_epsis_", "Metal_psis_", "Metale_sis_", "Metalep_is_", 
+            "Metaleps_s_", "Metalepsi__", "Metalepsis_"
+        ];
+        let titleIndex = 0;
+        setInterval(() => {
+            document.title = titles[titleIndex];
+            titleIndex = (titleIndex + 1) % titles.length;
+        }, 200);
+
+    </script>
+</body>
+</html>
