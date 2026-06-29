@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CONTACT_ // Metalepsis_</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Zen+Kaku+Gothic+New:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/TextPlugin.min.js"></script>
+
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        void: '#050505',
+        neon: '#a855f7',
+        acid: '#22d3ee',
+        alert: '#ef4444',
+      },
+      fontFamily: {
+        mono: ['"JetBrains Mono"', 'monospace'],
+        sans: ['"Zen Kaku Gothic New"', 'sans-serif'],
+      },
+    }
+  }
+}
+</script>
+
+<style>
+body{
+  background-color:#050505;
+  color:#e5e7eb;
+  overflow-x:hidden;
+  cursor:none;
+}
+.bg-grid{
+  background-image:linear-gradient(rgba(34,211,238,0.05) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(34,211,238,0.05) 1px, transparent 1px);
+  background-size:40px 40px;
+  position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:-1;pointer-events:none;
+}
+#cursor{
+  position:fixed;top:0;left:0;width:20px;height:20px;
+  border:1px solid #a855f7;background:rgba(168,85,247,0.1);
+  pointer-events:none;z-index:9999;
+  transform:translate(-50%,-50%) rotate(45deg);
+  mix-blend-mode:difference;
+  transition:width .3s,height .3s,background-color .3s,transform .1s;
+}
+#cursor.hovered{
+  width:60px;height:60px;background-color:rgba(34,211,238,.2);
+  border-color:#22d3ee;transform:translate(-50%,-50%) rotate(0deg);
+}
+#cursor::after{
+  content:'';position:absolute;top:50%;left:50%;width:4px;height:4px;
+  background:#a855f7;transform:translate(-50%,-50%);
+}
+.scanlines{
+  position:fixed;top:0;left:0;width:100vw;height:100vh;
+  background:linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,.2) 50%, rgba(0,0,0,.2));
+  background-size:100% 4px;pointer-events:none;z-index:9000;opacity:.4;
+}
+.glitch-wrapper{position:relative;display:inline-block;}
+.glitch{position:relative;z-index:1;}
+.glitch::before,.glitch::after{
+  content:attr(data-text);position:absolute;top:0;left:0;width:100%;height:100%;background:#050505;
+}
+.glitch::before{left:2px;text-shadow:-1px 0 #a855f7;clip-path:inset(20% 0 30% 0);animation:glitch-anim-1 2s infinite linear alternate-reverse;}
+.glitch::after{left:-2px;text-shadow:-1px 0 #22d3ee;clip-path:inset(40% 0 10% 0);animation:glitch-anim-2 3s infinite linear alternate-reverse;}
+@keyframes glitch-anim-1{0%{clip-path:inset(20% 0 30% 0);}100%{clip-path:inset(30% 0 20% 0);}}
+@keyframes glitch-anim-2{0%{clip-path:inset(10% 0 60% 0);}100%{clip-path:inset(0% 0 80% 0);}}
+
+::-webkit-scrollbar{width:6px;}
+::-webkit-scrollbar-track{background:#050505;}
+::-webkit-scrollbar-thumb{background:#333;}
+::-webkit-scrollbar-thumb:hover{background:#a855f7;}
+
+.glass-card{
+  background:rgba(10,10,10,.6);
+  backdrop-filter:blur(8px);
+  border:1px solid rgba(255,255,255,.05);
+  transition:all .3s cubic-bezier(.25,.46,.45,.94);
+}
+.glass-card:hover{
+  border-color:rgba(168,85,247,.5);
+  box-shadow:0 0 20px rgba(168,85,247,.1);
+}
+
+/* Form */
+.cyber-input{
+  background:rgba(255,255,255,.02);
+  border:1px solid #27272a;
+  color:#e5e7eb;
+  transition:all .3s ease;
+  position:relative;
+}
+.cyber-input:focus{
+  outline:none;
+  border-color:#a855f7;
+  box-shadow:0 0 0 1px rgba(168,85,247,.3), 0 0 20px rgba(168,85,247,.15);
+  background:rgba(168,85,247,.03);
+}
+.cyber-input::placeholder{color:#52525b;}
+
+.field-label{
+  font-family:'JetBrains Mono',monospace;
+  font-size:.7rem;
+  letter-spacing:.15em;
+  color:#71717a;
+  transition:color .3s;
+}
+.field-wrap:focus-within .field-label{color:#22d3ee;}
+
+.cyber-btn{
+  position:relative;overflow:hidden;
+  background:transparent;
+  border:1px solid #a855f7;
+  color:#fff;
+  font-family:'JetBrains Mono',monospace;
+  letter-spacing:.1em;
+  transition:color .3s;
+}
+.cyber-btn::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(90deg,#a855f7,#22d3ee);
+  transform:translateX(-101%);
+  transition:transform .4s ease;
+  z-index:-1;
+}
+.cyber-btn:hover::before{transform:translateX(0);}
+.cyber-btn:hover{color:#000;}
+.cyber-btn:disabled{opacity:.4;cursor:not-allowed;}
+
+.status-line{font-family:'JetBrains Mono',monospace;font-size:.75rem;}
+
+@keyframes blink{0%,49%{opacity:1;}50%,100%{opacity:0;}}
+.cursor-blink{animation:blink 1s step-end infinite;}
+
+.corner{position:absolute;width:14px;height:14px;border-color:#a855f7;}
+.corner-tl{top:-1px;left:-1px;border-top:1px solid;border-left:1px solid;}
+.corner-tr{top:-1px;right:-1px;border-top:1px solid;border-right:1px solid;}
+.corner-bl{bottom:-1px;left:-1px;border-bottom:1px solid;border-left:1px solid;}
+.corner-br{bottom:-1px;right:-1px;border-bottom:1px solid;border-right:1px solid;}
+</style>
+</head>
+<body class="font-sans antialiased selection:bg-neon selection:text-black">
+
+<div id="cursor"></div>
+<div class="scanlines"></div>
+<div class="bg-grid"></div>
+
+<!-- Header -->
+<header class="fixed top-0 left-0 w-full z-50 pointer-events-none mix-blend-plus-lighter">
+  <nav class="container mx-auto px-6 py-6 flex justify-between items-center pointer-events-auto bg-gradient-to-b from-void/80 to-transparent backdrop-blur-sm">
+    <a href="index.html" class="text-2xl font-mono font-bold hover-trigger group flex items-center gap-2">
+      <span class="w-3 h-3 bg-neon rounded-none animate-pulse"></span>
+      Metalepsis<span class="text-acid">_</span>
+    </a>
+    <div class="hidden md:flex space-x-8 font-mono text-xs tracking-widest text-gray-400">
+      <a href="index.html" class="hover:text-neon transition-colors hover-trigger">[00] TOP</a>
+      <a href="#contact" class="text-acid hover-trigger">[01] CONTACT</a>
+    </div>
+  </nav>
+</header>
+
+<main id="top">
+  <!-- Hero -->
+  <section class="min-h-[60vh] flex flex-col items-center justify-center relative px-6 pt-32 pb-16 text-center overflow-hidden">
+    <div class="absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,rgba(168,85,247,0.08),transparent_60%)]"></div>
+    <span id="scramble-text" class="font-mono text-acid text-xs md:text-sm tracking-widest mb-6 block">SYSTEM STATUS: UNSTABLE</span>
+    <h1 class="glitch-wrapper text-5xl md:text-8xl font-mono font-bold tracking-tight">
+      <span class="glitch" data-text="CONTACT_">CONTACT_</span>
+    </h1>
+    <p class="reveal-hero-text opacity-0 translate-y-4 font-mono text-gray-400 mt-6 max-w-xl text-sm md:text-base">
+      /// 通信回線を確立してください。お問い合わせ・ご依頼はこちらのフォームから送信できます。
+    </p>
+  </section>
+
+  <!-- Contact Form Section -->
+  <section class="py-20 px-6 relative">
+    <div class="container mx-auto max-w-3xl">
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-px mb-16 reveal-up font-mono text-xs">
+        <div class="glass-card p-6 text-center">
+          <i class="ph ph-clock-countdown text-2xl text-neon mb-3 block"></i>
+          <p class="text-gray-400">RESPONSE_TIME</p>
+          <p class="text-white mt-1">48-72H</p>
+        </div>
+        <div class="glass-card p-6 text-center">
+          <i class="ph ph-shield-check text-2xl text-acid mb-3 block"></i>
+          <p class="text-gray-400">ENCRYPTION</p>
+          <p class="text-white mt-1">SECURE_LINE</p>
+        </div>
+        <div class="glass-card p-6 text-center">
+          <i class="ph ph-broadcast text-2xl text-neon mb-3 block"></i>
+          <p class="text-gray-400">STATUS</p>
+          <p class="text-white mt-1"><span class="text-acid">●</span> ONLINE</p>
+        </div>
+      </div>
+
+      <div class="glass-card p-8 md:p-12 relative reveal-up">
+        <span class="corner corner-tl"></span>
+        <span class="corner corner-tr"></span>
+        <span class="corner corner-bl"></span>
+        <span class="corner corner-br"></span>
+
+        <div class="mb-10">
+          <span class="font-mono text-neon text-xs tracking-widest block mb-2">/// TRANSMISSION_FORM</span>
+          <h2 class="text-2xl md:text-3xl font-mono font-bold text-white">SEND A MESSAGE</h2>
+        </div>
+
+        <form id="contact-form" class="space-y-8" novalidate
+              action="https://formsubmit.co/ajax/contactmetalepsis@gmail.com" method="POST">
+
+          <!-- FormSubmit 設定用フィールド -->
+          <input type="hidden" name="_subject" value="【Metalepsis_】お問い合わせがありました">
+          <input type="hidden" name="_template" value="table">
+          <input type="hidden" name="_captcha" value="false">
+          <input type="text" name="_honey" style="display:none" tabindex="-1" autocomplete="off">
+
+          <div class="field-wrap">
+            <label for="name" class="field-label block mb-2">[ 01 ] NAME *</label>
+            <input id="name" name="name" type="text" required placeholder="山田 太郎"
+                   class="cyber-input w-full px-4 py-3 font-mono text-sm">
+            <p class="error-msg text-alert text-xs font-mono mt-1 h-4"></p>
+          </div>
+
+          <div class="field-wrap">
+            <label for="email" class="field-label block mb-2">[ 02 ] EMAIL_ADDRESS *</label>
+            <input id="email" name="email" type="email" required placeholder="you@example.com"
+                   class="cyber-input w-full px-4 py-3 font-mono text-sm">
+            <p class="error-msg text-alert text-xs font-mono mt-1 h-4"></p>
+          </div>
+
+          <div class="field-wrap">
+            <label for="subject" class="field-label block mb-2">[ 03 ] SUBJECT</label>
+            <input id="subject" name="subject" type="text" placeholder="件名を入力してください"
+                   class="cyber-input w-full px-4 py-3 font-mono text-sm">
+          </div>
+
+          <div class="field-wrap">
+            <label for="message" class="field-label block mb-2">[ 04 ] MESSAGE *</label>
+            <textarea id="message" name="message" required rows="6" placeholder="メッセージ本文を入力してください..."
+                      class="cyber-input w-full px-4 py-3 font-mono text-sm resize-none"></textarea>
+            <p class="error-msg text-alert text-xs font-mono mt-1 h-4"></p>
+          </div>
+
+          <div class="flex items-center gap-3">
+            <input id="agree" name="agree" type="checkbox" required class="w-4 h-4 accent-neon">
+            <label for="agree" class="font-mono text-xs text-gray-400">プライバシーポリシーに同意します *</label>
+          </div>
+
+          <button type="submit" id="submit-btn" class="cyber-btn w-full py-4 font-bold text-sm hover-trigger">
+            <span id="btn-text">TRANSMIT_MESSAGE →</span>
+          </button>
+
+          <div id="form-status" class="status-line text-center min-h-[1.5rem]"></div>
+        </form>
+      </div>
+
+      <!-- Alt contact -->
+      <div class="mt-16 text-center reveal-up">
+        <span class="font-mono text-gray-500 text-xs tracking-widest block mb-6">/// OR_REACH_OUT_DIRECTLY</span>
+        <div class="flex flex-wrap justify-center gap-6">
+          <a href="https://x.com/Metalepsis_" target="_blank" class="w-14 h-14 border border-gray-700 flex items-center justify-center text-xl text-gray-400 hover:text-black hover:bg-neon hover:border-neon transition-all duration-300 hover-trigger hover:-translate-y-2">
+            <i class="ph ph-x-logo"></i>
+          </a>
+          <a href="https://instagram.com/_.metalepsis._" target="_blank" class="w-14 h-14 border border-gray-700 flex items-center justify-center text-xl text-gray-400 hover:text-white hover:bg-pink-600 hover:border-pink-600 transition-all duration-300 hover-trigger hover:-translate-y-2">
+            <i class="ph ph-instagram-logo"></i>
+          </a>
+          <a href="#" target="_blank" class="w-14 h-14 border border-gray-700 flex items-center justify-center text-xl text-gray-400 hover:text-white hover:bg-indigo-600 hover:border-indigo-600 transition-all duration-300 hover-trigger hover:-translate-y-2">
+            <i class="ph ph-discord-logo"></i>
+          </a>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <footer id="contact" class="py-12 border-t border-gray-900 text-center">
+    <p class="text-gray-600 font-mono text-xs">&copy; 2026 Metalepsis_. All Rights Reserved.</p>
+  </footer>
+</main>
+
+<script>
+// Custom Cursor
+const cursor = document.getElementById('cursor');
+document.addEventListener('mousemove', (e) => {
+  cursor.style.left = e.clientX + 'px';
+  cursor.style.top = e.clientY + 'px';
+});
+function bindHoverTriggers(){
+  document.querySelectorAll('.hover-trigger, a, button, input, textarea, select').forEach(trigger => {
+    trigger.addEventListener('mouseenter', () => cursor.classList.add('hovered'));
+    trigger.addEventListener('mouseleave', () => cursor.classList.remove('hovered'));
+  });
+}
+bindHoverTriggers();
+
+// GSAP Setup
+gsap.registerPlugin(ScrollTrigger, TextPlugin);
+
+const tl = gsap.timeline();
+const scrambleElement = document.getElementById("scramble-text");
+const targetText = "SYSTEM STATUS: UNSTABLE";
+const chars = "01_!@#$%";
+const proxy = { value: 0 };
+
+tl.to(proxy, {
+  value: 1,
+  duration: 1.5,
+  ease: "none",
+  onUpdate: function () {
+    const progress = this.progress();
+    const len = targetText.length;
+    const revealed = Math.floor(progress * len);
+    let output = "";
+    for (let i = 0; i < len; i++) {
+      output += i < revealed ? targetText[i] : chars[Math.floor(Math.random() * chars.length)];
+    }
+    scrambleElement.innerText = output;
+  },
+  onComplete: () => { scrambleElement.innerText = targetText; }
+})
+.from(".glitch", { duration: 1, y: 50, opacity: 0, ease: "power4.out" })
+.to(".reveal-hero-text", { duration: 1, opacity: 1, y: 0, ease: "power2.out" }, "-=0.5");
+
+// Scroll reveal
+gsap.utils.toArray('.reveal-up').forEach((elem) => {
+  gsap.from(elem, {
+    scrollTrigger: { trigger: elem, start: "top 90%", toggleActions: "play none none reverse" },
+    y: 40,
+    opacity: 0,
+    duration: 0.9,
+    ease: "power3.out"
+  });
+});
+
+// Form field focus glow micro animation
+document.querySelectorAll('.cyber-input').forEach(el => {
+  el.addEventListener('focus', () => {
+    gsap.fromTo(el, { boxShadow: "0 0 0 0 rgba(168,85,247,0)" }, { boxShadow: "0 0 0 1px rgba(168,85,247,.3), 0 0 20px rgba(168,85,247,.15)", duration: .3 });
+  });
+});
+
+// Form validation + fake submit flow
+const form = document.getElementById('contact-form');
+const btn = document.getElementById('submit-btn');
+const btnText = document.getElementById('btn-text');
+const statusEl = document.getElementById('form-status');
+
+function setError(fieldId, msg){
+  const field = document.getElementById(fieldId);
+  const wrap = field.closest('.field-wrap');
+  const err = wrap ? wrap.querySelector('.error-msg') : null;
+  if(err) err.textContent = msg || '';
+  if(msg){
+    field.classList.add('border-alert');
+    gsap.fromTo(field, {x:-4},{x:0, duration:.3, ease:"elastic.out(1,.4)"});
+  } else {
+    field.classList.remove('border-alert');
+  }
+}
+
+function validate(){
+  let ok = true;
+  const name = document.getElementById('name').value.trim();
+  const email = document.getElementById('email').value.trim();
+  const message = document.getElementById('message').value.trim();
+  const agree = document.getElementById('agree').checked;
+
+  if(!name){ setError('name', 'ERROR: NAME_REQUIRED'); ok = false; } else setError('name', '');
+
+  const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if(!email){ setError('email', 'ERROR: EMAIL_REQUIRED'); ok = false; }
+  else if(!emailRe.test(email)){ setError('email', 'ERROR: INVALID_FORMAT'); ok = false; }
+  else setError('email', '');
+
+  if(!message){ setError('message', 'ERROR: MESSAGE_REQUIRED'); ok = false; } else setError('message', '');
+
+  if(!agree){
+    statusEl.innerHTML = '<span class="text-alert">ERROR: AGREEMENT_REQUIRED</span>';
+    ok = false;
+  }
+
+  return ok;
+}
+
+form.addEventListener('submit', function(e){
+  e.preventDefault();
+  e.stopPropagation();
+
+  if(!validate()) return;
+
+  btn.disabled = true;
+  statusEl.innerHTML = '<span class="text-acid">TRANSMITTING<span class="cursor-blink">_</span></span>';
+  btnText.textContent = "SENDING...";
+
+  const formData = new FormData(form);
+
+  fetch(form.action, {
+    method: "POST",
+    headers: { 'Accept': 'application/json' },
+    body: formData
+  })
+  .then(res => {
+    if(!res.ok) throw new Error("送信に失敗しました");
+    return res.json();
+  })
+  .then(() => {
+    statusEl.innerHTML = '<span class="text-acid">✓ TRANSMISSION_COMPLETE — メッセージを送信しました。</span>';
+    btnText.textContent = "MESSAGE_SENT ✓";
+    form.reset();
+    setTimeout(() => {
+      btnText.textContent = "TRANSMIT_MESSAGE →";
+      btn.disabled = false;
+      statusEl.innerHTML = '';
+    }, 4000);
+  })
+  .catch(() => {
+    statusEl.innerHTML = '<span class="text-alert">ERROR: TRANSMISSION_FAILED — 時間をおいて再度お試しください。</span>';
+    btnText.textContent = "TRANSMIT_MESSAGE →";
+    btn.disabled = false;
+  });
+});
+</script>
+</body>
+</html>
